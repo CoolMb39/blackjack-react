@@ -352,3 +352,31 @@ function App() {
 }
 
 export default App
+// Inside App.jsx
+
+// 1. Calculate the canSurrender boolean
+const canSurrender = 
+  gameState === "playing" && 
+  playerCards.length === 2 && 
+  !hasSplit; // Replace 'hasSplit' with your specific state tracking split hands
+
+// 2. Add the handleSurrender function
+const handleSurrender = () => {
+  const refundAmount = currentBet / 2;
+  
+  setMoney(prevMoney => prevMoney + refundAmount);
+  setGameState("gameOver");
+  setGameMessage("Surrendered"); // Or whatever state variable tracks your display text
+  
+  // Optional: clear out the current bet or set it to 0 depending on your architecture
+  setCurrentBet(0); 
+};
+
+// 3. Pass canSurrender and handleSurrender down to your GameControls component
+return (
+  <GameControls 
+    canSurrender={canSurrender} 
+    onSurrender={handleSurrender}
+    // ... other existing props
+  />
+);

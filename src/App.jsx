@@ -144,7 +144,7 @@ function App() {
       let msg = []
       let types = []
       const betArr = [currentBet, splitBet]
-      ["Main", "Split"].forEach((label, i) => {
+      ;["Main", "Split"].forEach((label, i) => {
         let w = 0, t = "", m = ""
         switch (winner[i]) {
           case "player":
@@ -172,7 +172,7 @@ function App() {
         msg.push(m)
         types.push(t)
       })
-      setMoney(money + winnings)
+      setMoney((prevMoney) => prevMoney + winnings)
       setMessage(msg.join(" | "))
       setMessageType(types.join(" "))
       return
@@ -205,7 +205,7 @@ function App() {
         break
     }
 
-    setMoney(money + winnings)
+    setMoney((prevMoney) => prevMoney + winnings)
     setMessage(messageText)
     setMessageType(msgType)
   }
@@ -238,6 +238,7 @@ function App() {
 
   // Show split if allowed
   const showSplit = gameState === "playing" && !splitCards && canSplit(playerCards) && money >= currentBet
+
   // Show double down if allowed (only on first move of each hand)
   const showDoubleDown = gameState === "playing" && (
     (!splitCards && canDoubleDown(playerCards, money, currentBet)) ||
@@ -245,15 +246,17 @@ function App() {
     (splitCards && activeHand === "split" && splitCards.length === 2 && canDoubleDown(splitCards, money, splitBet))
   )
 
+  // Surrender condition: Initial 2 cards of main hand, before hit or split
+  const canSurrender = gameState === "playing" && playerCards.length === 2 && !splitCards
+
   // Split handler
   const handleSplit = async () => {
     if (!canSplit(playerCards) || money < currentBet) return
-    // Move one card to split hand, draw one for each
     const newCards = await drawCards(deckId, 2)
     setPlayerCards([playerCards[0], newCards[0]])
     setSplitCards([playerCards[1], newCards[1]])
     setSplitBet(currentBet)
-    setMoney(money - currentBet)
+    setMoney((prevMoney) => prevMoney - currentBet)
     setActiveHand("main")
   }
 
@@ -264,14 +267,14 @@ function App() {
         const newCards = await drawCards(deckId, 1)
         const updated = [...playerCards, ...newCards]
         setPlayerCards(updated)
-        setMoney(money - currentBet)
+        setMoney((prevMoney) => prevMoney - currentBet)
         setCurrentBet(currentBet * 2)
         setActiveHand("split")
       } else if (activeHand === "split" && splitCards.length === 2 && money >= splitBet) {
         const newCards = await drawCards(deckId, 1)
         const updated = [...splitCards, ...newCards]
         setSplitCards(updated)
-        setMoney(money - splitBet)
+        setMoney((prevMoney) => prevMoney - splitBet)
         setSplitBet(splitBet * 2)
         setGameState("dealerTurn")
         dealerPlay()
@@ -280,11 +283,20 @@ function App() {
       const newCards = await drawCards(deckId, 1)
       const updated = [...playerCards, ...newCards]
       setPlayerCards(updated)
-      setMoney(money - currentBet)
+      setMoney((prevMoney) => prevMoney - currentBet)
       setCurrentBet(currentBet * 2)
       setGameState("dealerTurn")
       dealerPlay()
     }
+  }
+
+  // Surrender handler
+  const handleSurrender = () => {
+    const refundAmount = Math.floor(currentBet / 2)
+    setMoney((prevMoney) => prevMoney + refundAmount)
+    setGameState("gameOver")
+    setMessage(`Surrendered! Half bet returned (+$${refundAmount})`)
+    setMessageType("push")
   }
 
   return (
@@ -302,8 +314,7 @@ function App() {
           />
         </aside>
         <div className="game-center">
-          <header className="game-header minimalist-header">
-          </header>
+          <header className="game-header minimalist-header"></header>
           <div className="game-area minimalist-area">
             <Hand
               cards={dealerCards}
@@ -312,8 +323,8 @@ function App() {
               showValue={gameState !== "playing"}
             />
             <GameMessage message={message} type={messageType} />
-            <Hand cards={playerCards} title={splitCards ? (activeHand === "main" ? "Player (Main)" : "Player (Main)") : "Player"} />
-            {splitCards && <Hand cards={splitCards} title={activeHand === "split" ? "Player (Split)" : "Player (Split)"} />}
+            <Hand cards={playerCards} title={splitCards ? "Player (Main)" : "Player"} />
+            {splitCards && <Hand cards={splitCards} title="Player (Split)" />}
           </div>
           <div className="control-area minimalist-controls">
             <GameControls
@@ -321,11 +332,13 @@ function App() {
               onStand={stand}
               onSplit={handleSplit}
               onDoubleDown={handleDoubleDown}
+              onSurrender={handleSurrender}
               onNewGame={newGame}
               gameState={gameState}
               canHit={canHit}
               canSplit={showSplit}
               canDoubleDown={showDoubleDown}
+              canSurrender={canSurrender}
             />
           </div>
         </div>
@@ -352,31 +365,3 @@ function App() {
 }
 
 export default App
-// Inside App.jsx
-
-// 1. Calculate the canSurrender boolean
-const canSurrender = 
-  gameState === "playing" && 
-  playerCards.length === 2 && 
-  !hasSplit; // Replace 'hasSplit' with your specific state tracking split hands
-
-// 2. Add the handleSurrender function
-const handleSurrender = () => {
-  const refundAmount = currentBet / 2;
-  
-  setMoney(prevMoney => prevMoney + refundAmount);
-  setGameState("gameOver");
-  setGameMessage("Surrendered"); // Or whatever state variable tracks your display text
-  
-  // Optional: clear out the current bet or set it to 0 depending on your architecture
-  setCurrentBet(0); 
-};
-
-// 3. Pass canSurrender and handleSurrender down to your GameControls component
-return (
-  <GameControls 
-    canSurrender={canSurrender} 
-    onSurrender={handleSurrender}
-    // ... other existing props
-  />
-);

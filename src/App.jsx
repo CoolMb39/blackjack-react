@@ -323,8 +323,8 @@ function App() {
               showValue={gameState !== "playing"}
             />
             <GameMessage message={message} type={messageType} />
-            <Hand cards={playerCards} title={splitCards ? (activeHand === "main" ? "Player (Main)" : "Player (Main)") : "Player"} />
-            {splitCards && <Hand cards={splitCards} title={activeHand === "split" ? "Player (Split)" : "Player (Split)"} />}
+            <Hand cards={playerCards} title={splitCards ? (activeHand === "main" ? "▶ Player (Main)" : "Player (Main)") : "Player"} />
+            {splitCards && <Hand cards={splitCards} title={activeHand === "split" ? "▶ Player (Split)" : "Player (Split)"} />}
           </div>
           <div className="control-area minimalist-controls">
             <GameControls

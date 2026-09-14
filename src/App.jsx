@@ -245,6 +245,17 @@ function App() {
     (splitCards && activeHand === "split" && splitCards.length === 2 && canDoubleDown(splitCards, money, splitBet))
   )
 
+  const canSurrender = gameState === "playing" && playerCards.length === 2 && !splitCards
+
+  const handleSurrender = () => {
+    if (!canSurrender) return
+
+    setMoney(money + currentBet / 2)
+    setGameState("gameOver")
+    setMessage("Surrendered")
+    setMessageType("lose")
+  }
+
   // Split handler
   const handleSplit = async () => {
     if (!canSplit(playerCards) || money < currentBet) return
@@ -321,11 +332,13 @@ function App() {
               onStand={stand}
               onSplit={handleSplit}
               onDoubleDown={handleDoubleDown}
+              onSurrender={handleSurrender}
               onNewGame={newGame}
               gameState={gameState}
               canHit={canHit}
               canSplit={showSplit}
               canDoubleDown={showDoubleDown}
+              canSurrender={canSurrender}
             />
           </div>
         </div>
